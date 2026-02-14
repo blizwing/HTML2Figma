@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+const path = require('path');
 
 // ============================================================================
 // HTML to Figma Scraper — Extracts full computed styles from a live web page
@@ -9,7 +10,31 @@ const DEFAULT_URL = 'http://localhost:5173/';
 const DEFAULT_VIEWPORT = { width: 1440, height: 900 };
 
 (async () => {
-    const url = process.argv[2] || DEFAULT_URL;
+    let url = process.argv[2] || DEFAULT_URL;
+
+    // Security: Validate URL protocol
+    try {
+        if (!url.startsWith('http')) {
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                // effective 'prepend' for lazy users, but check for other protocols
+                if (url.includes('://')) {
+                    console.error('❌ Error: Only http and https protocols are supported.');
+                    process.exit(1);
+                }
+                url = 'http://' + url;
+            }
+        }
+        const parsed = new URL(url);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+            console.error('❌ Error: Only http and https protocols are supported.');
+            process.exit(1);
+        }
+        url = parsed.toString();
+    } catch (e) {
+        console.error('❌ Error: Invalid URL provided.');
+        process.exit(1);
+    }
+
     const viewportWidth = parseInt(process.argv[3]) || DEFAULT_VIEWPORT.width;
     const viewportHeight = parseInt(process.argv[4]) || DEFAULT_VIEWPORT.height;
 
@@ -736,7 +761,15 @@ const DEFAULT_VIEWPORT = { width: 1440, height: 900 };
     // ========================================================================
     // Write output
     // ========================================================================
-    const outputPath = process.argv[5] || 'design.json';
+    let outputPath = process.argv[5] || 'design.json';
+
+    // Security: Prevent directory traversal (Arbitrary File Write)
+    const originalPath = outputPath;
+    outputPath = path.basename(outputPath);
+    if (outputPath !== originalPath) {
+        console.warn(`⚠️  Security: Path traversal detected. Saving to '${outputPath}' in current directory.`);
+    }
+
     fs.writeFileSync(outputPath, JSON.stringify(designData, null, 2));
 
     // Quick stats

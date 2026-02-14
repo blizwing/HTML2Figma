@@ -17,13 +17,23 @@ figma.ui.onmessage = async (msg) => {
 
         try {
             // Count total nodes for progress tracking
+            const MAX_NODES = 30000; // Security: Prevent DoS from massive files
             let totalNodes = 0;
             let processedNodes = 0;
-            countNodes(data.rootNode);
+
+            try {
+                countNodes(data.rootNode);
+            } catch (e) {
+                figma.notify(`❌ Error: ${e.message}`);
+                return;
+            }
 
             function countNodes(n) {
                 if (!n) return;
                 totalNodes++;
+                if (totalNodes > MAX_NODES) {
+                    throw new Error(`Design is too complex (> ${MAX_NODES} layers). Import cancelled to prevent freezing.`);
+                }
                 if (n.children) n.children.forEach(countNodes);
             }
 
