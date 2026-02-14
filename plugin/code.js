@@ -444,24 +444,28 @@ figma.ui.onmessage = async (msg) => {
 
             function applyEffects(figmaNode, node) {
                 if (node.effects && node.effects.length > 0) {
-                    figmaNode.effects = node.effects.map(function (effect) {
-                        var ec = effect.color || {};
-                        var eo = effect.offset || {};
-                        return {
-                            type: effect.type,
-                            color: {
-                                r: clamp(ec.r || 0),
-                                g: clamp(ec.g || 0),
-                                b: clamp(ec.b || 0),
-                                a: ec.a !== undefined ? clamp(ec.a) : 1
-                            },
-                            offset: { x: eo.x || 0, y: eo.y || 0 },
-                            radius: Math.max(effect.radius || 0, 0),
-                            spread: effect.spread || 0,
-                            visible: true,
-                            blendMode: 'NORMAL'
-                        };
-                    });
+                    try {
+                        figmaNode.effects = node.effects.map(function (effect) {
+                            var ec = effect.color || {};
+                            var eo = effect.offset || {};
+                            return {
+                                type: effect.type,
+                                color: {
+                                    r: clamp(ec.r || 0),
+                                    g: clamp(ec.g || 0),
+                                    b: clamp(ec.b || 0),
+                                    a: ec.a !== undefined ? clamp(ec.a) : 1
+                                },
+                                offset: { x: eo.x || 0, y: eo.y || 0 },
+                                radius: Math.max(effect.radius || 0, 0),
+                                spread: effect.spread || 0,
+                                visible: true,
+                                blendMode: 'NORMAL'
+                            };
+                        });
+                    } catch (e) {
+                        console.error('Failed to apply effects:', e);
+                    }
                 }
             }
 
