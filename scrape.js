@@ -13,6 +13,7 @@ const DEFAULT_VIEWPORT = { width: 1440, height: 900 };
     let url = process.argv[2] || DEFAULT_URL;
 
     // Security: Validate URL protocol
+    // Note: This does not prevent SSRF. If deploying as a service, validate IP ranges to block internal access.
     try {
         if (!url.startsWith('http')) {
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -69,6 +70,9 @@ const DEFAULT_VIEWPORT = { width: 1440, height: 900 };
     // In-browser extraction: walks the DOM and reads getComputedStyle
     // ========================================================================
     const designData = await page.evaluate(() => {
+        // Security: Limit total nodes to prevent DoS/Crash on massive pages
+        const MAX_NODES = 40000;
+        let totalNodes = 0;
 
         // --- Color Parsing Helpers ---
 
@@ -390,6 +394,11 @@ const DEFAULT_VIEWPORT = { width: 1440, height: 900 };
         // --- Main DOM Walker ---
 
         function walkElement(el, parentRect) {
+            // Security: limit recursion to prevent infinite loops or potential memory exhaustion
+            if (totalNodes++ > MAX_NODES) {
+                // Return null to stop processing this branch
+                return null;
+            }
             // Skip invisible or empty elements
             const cs = window.getComputedStyle(el);
             if (cs.display === 'none' || cs.visibility === 'hidden') return null;
