@@ -247,11 +247,8 @@ figma.ui.onmessage = async (msg) => {
                     textNode.fills = sanitizeFills(node.fills);
                 }
 
-                // Sizing
-                const w = Math.max(node.width || 1, 1);
-                const h = Math.max(node.height || 1, 1);
-                textNode.resize(w, h);
-                textNode.textAutoResize = 'NONE';
+                // Sizing — use auto-resize so Figma adjusts to font metrics
+                textNode.textAutoResize = 'WIDTH_AND_HEIGHT';
 
                 if (wrapper) {
                     textNode.x = 0;

@@ -397,6 +397,26 @@ const DEFAULT_VIEWPORT = { width: 1440, height: 900 };
                 return node;
             }
 
+            // Canvas handling — capture canvas content as image
+            if (tag === 'canvas') {
+                try {
+                    const dataUrl = el.toDataURL('image/png');
+                    if (dataUrl && dataUrl !== 'data:,') {
+                        node.type = 'IMAGE';
+                        // Strip the data:image/png;base64, prefix
+                        node.imageBase64 = dataUrl.split(',')[1];
+                        node.name = 'canvas';
+                        return node;
+                    }
+                } catch (e) {
+                    // Canvas may be tainted (cross-origin), skip
+                }
+                // If canvas capture fails, return as empty frame
+                node.type = 'FRAME';
+                node.fills = [];
+                return node;
+            }
+
             // --- Check if this is a text-only node ---
             const hasOnlyTextChildren = Array.from(el.childNodes).every(
                 c => c.nodeType === Node.TEXT_NODE ||
