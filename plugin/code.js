@@ -357,12 +357,13 @@ figma.ui.onmessage = async (msg) => {
 
                 return fills.map(fill => {
                     if (fill.type === 'SOLID') {
+                        var c = fill.color || {};
                         return {
                             type: 'SOLID',
                             color: {
-                                r: clamp(fill.color?.r || 0),
-                                g: clamp(fill.color?.g || 0),
-                                b: clamp(fill.color?.b || 0)
+                                r: clamp(c.r || 0),
+                                g: clamp(c.g || 0),
+                                b: clamp(c.b || 0)
                             },
                             opacity: fill.opacity !== undefined ? clamp(fill.opacity) : 1
                         };
@@ -371,15 +372,19 @@ figma.ui.onmessage = async (msg) => {
                     if (fill.type === 'GRADIENT_LINEAR' || fill.type === 'GRADIENT_RADIAL') {
                         return {
                             type: fill.type,
-                            gradientStops: (fill.gradientStops || []).map(stop => ({
-                                color: {
-                                    r: clamp(stop.color?.r || 0),
-                                    g: clamp(stop.color?.g || 0),
-                                    b: clamp(stop.color?.b || 0),
-                                    a: stop.color?.a !== undefined ? clamp(stop.color.a) : 1
-                                },
-                                position: clamp(stop.position || 0)
-                            })),
+                            gradientStops: (fill.gradientStops || []).map(function (stop) {
+                                var sc = stop.color || {};
+                                return {
+                                    color: {
+                                        r: clamp(sc.r || 0),
+                                        g: clamp(sc.g || 0),
+                                        b: clamp(sc.b || 0),
+                                        a: sc.a !== undefined ? clamp(sc.a) : 1
+                                    },
+                                    position: clamp(stop.position || 0)
+                                };
+                            }
+                            ),
                             gradientTransform: fill.gradientHandlePositions
                                 ? handlePositionsToTransform(fill.gradientHandlePositions)
                                 : [[1, 0, 0], [0, 1, 0]]
@@ -439,19 +444,23 @@ figma.ui.onmessage = async (msg) => {
 
             function applyEffects(figmaNode, node) {
                 if (node.effects && node.effects.length > 0) {
-                    figmaNode.effects = node.effects.map(effect => ({
-                        type: effect.type,
-                        color: {
-                            r: clamp(effect.color?.r || 0),
-                            g: clamp(effect.color?.g || 0),
-                            b: clamp(effect.color?.b || 0),
-                            a: effect.color?.a !== undefined ? clamp(effect.color.a) : 1
-                        },
-                        offset: { x: effect.offset?.x || 0, y: effect.offset?.y || 0 },
-                        radius: Math.max(effect.radius || 0, 0),
-                        spread: effect.spread || 0,
-                        visible: true
-                    }));
+                    figmaNode.effects = node.effects.map(function (effect) {
+                        var ec = effect.color || {};
+                        var eo = effect.offset || {};
+                        return {
+                            type: effect.type,
+                            color: {
+                                r: clamp(ec.r || 0),
+                                g: clamp(ec.g || 0),
+                                b: clamp(ec.b || 0),
+                                a: ec.a !== undefined ? clamp(ec.a) : 1
+                            },
+                            offset: { x: eo.x || 0, y: eo.y || 0 },
+                            radius: Math.max(effect.radius || 0, 0),
+                            spread: effect.spread || 0,
+                            visible: true
+                        };
+                    });
                 }
             }
 
