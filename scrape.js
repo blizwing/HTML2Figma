@@ -31,6 +31,16 @@ const DEFAULT_VIEWPORT = { width: 1440, height: 900 };
     console.log('✅ Page loaded. Extracting styles...');
 
     // ========================================================================
+    // Capture full-page screenshot as base64 (pixel-perfect background)
+    // ========================================================================
+    console.log('📸 Capturing full-page screenshot...');
+    const screenshotBase64 = await page.screenshot({
+        fullPage: true,
+        encoding: 'base64',
+        type: 'png'
+    });
+
+    // ========================================================================
     // In-browser extraction: walks the DOM and reads getComputedStyle
     // ========================================================================
     const designData = await page.evaluate(() => {
@@ -630,6 +640,9 @@ const DEFAULT_VIEWPORT = { width: 1440, height: 900 };
             rootNode: result
         };
     });
+
+    // Attach the full-page screenshot
+    designData.screenshotBase64 = screenshotBase64;
 
     // ========================================================================
     // Post-processing: fetch images and convert to base64

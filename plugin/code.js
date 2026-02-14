@@ -28,14 +28,40 @@ figma.ui.onmessage = async (msg) => {
             }
 
             // Create root frame
+            var pageWidth = data.viewportWidth || 1440;
+            var pageHeight = data.fullHeight || data.viewportHeight || 900;
             const rootFrame = figma.createFrame();
             rootFrame.name = data.pageTitle || 'Imported Web Page';
-            rootFrame.resize(
-                data.viewportWidth || 1440,
-                data.fullHeight || data.viewportHeight || 900
-            );
+            rootFrame.resize(pageWidth, pageHeight);
+            rootFrame.clipsContent = true;
+            rootFrame.fills = [];
 
-            // Process the root node
+            // ============================================================
+            // Screenshot background layer (pixel-perfect reference)
+            // ============================================================
+            if (data.screenshotBase64) {
+                sendProgress('Creating screenshot background...', 5);
+                try {
+                    var raw = figma.base64Decode(data.screenshotBase64);
+                    var image = figma.createImage(raw);
+                    var bgRect = figma.createRectangle();
+                    bgRect.name = '🖼️ Screenshot Background';
+                    bgRect.resize(pageWidth, pageHeight);
+                    bgRect.x = 0;
+                    bgRect.y = 0;
+                    bgRect.fills = [{
+                        type: 'IMAGE',
+                        scaleMode: 'FILL',
+                        imageHash: image.hash
+                    }];
+                    rootFrame.appendChild(bgRect);
+                    bgRect.locked = true;
+                } catch (e) {
+                    console.error('Screenshot layer error:', e);
+                }
+            }
+
+            // Process the DOM tree nodes
             await processNode(data.rootNode, rootFrame);
 
             // Center in viewport
@@ -247,8 +273,10 @@ figma.ui.onmessage = async (msg) => {
                     textNode.fills = sanitizeFills(node.fills);
                 }
 
-                // Sizing — use auto-resize so Figma adjusts to font metrics
-                textNode.textAutoResize = 'WIDTH_AND_HEIGHT';
+                // Sizing — fixed width from scraper, auto height for font metric adjustment
+                var tw = Math.max(node.width || 1, 1);
+                textNode.resize(tw, Math.max(node.height || 1, 1));
+                textNode.textAutoResize = 'HEIGHT';
 
                 if (wrapper) {
                     textNode.x = 0;
