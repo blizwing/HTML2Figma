@@ -458,7 +458,8 @@ figma.ui.onmessage = async (msg) => {
                             offset: { x: eo.x || 0, y: eo.y || 0 },
                             radius: Math.max(effect.radius || 0, 0),
                             spread: effect.spread || 0,
-                            visible: true
+                            visible: true,
+                            blendMode: 'NORMAL'
                         };
                     });
                 }
