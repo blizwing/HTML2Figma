@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 24px;
+      background: #1e1e1e;
+      color: #e0e0e0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    .upload-zone {
+      border: 2px dashed #444;
+      border-radius: 12px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 16px;
+      background: #252525;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: #a78bfa;
+      background: #2a2540;
+    }
+
+    .upload-zone .icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .upload-zone .label {
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    .upload-zone .filename {
+      font-size: 13px;
+      color: #a78bfa;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.3px;
+    }
+
+    button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .progress-container {
+      margin-top: 16px;
+      display: none;
+    }
+
+    .progress-container.active {
+      display: block;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: #333;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #7c3aed, #3b82f6);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .progress-text {
+      font-size: 12px;
+      color: #888;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    .footer {
+      margin-top: auto;
+      text-align: center;
+      font-size: 11px;
+      color: #555;
+      padding-top: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>HTML → Figma</h2>
+  <p class="subtitle">Import design.json to create editable Figma layers</p>
+
+  <div class="upload-zone" id="dropZone">
+    <span class="icon">📄</span>
+    <span class="label">Click or drag design.json here</span>
+    <span class="filename" id="fileName"></span>
+  </div>
+
+  <input type="file" id="fileInput" accept=".json" />
+
+  <button id="importBtn" disabled>Import to Figma</button>
+
+  <div class="progress-container" id="progressContainer">
+    <div class="progress-bar-bg">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText">Preparing...</div>
+  </div>
+
+  <div class="footer">Open source · Built with ❤️</div>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const importBtn = document.getElementById('importBtn');
+    const fileName = document.getElementById('fileName');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+
+    let loadedData = null;
+
+    // Click to upload
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        handleFile(fileInput.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      if (!file.name.endsWith('.json')) {
+        alert('Please select a .json file');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          loadedData = JSON.parse(e.target.result);
+          fileName.textContent = `✅ ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+          importBtn.disabled = false;
+        } catch (err) {
+          alert('Invalid JSON file');
+          loadedData = null;
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Import button
+    importBtn.addEventListener('click', () => {
+      if (!loadedData) return;
+      importBtn.disabled = true;
+      progressContainer.classList.add('active');
+      progressBar.style.width = '5%';
+      progressText.textContent = 'Sending data to plugin...';
+
+      parent.postMessage({
+        pluginMessage: { type: 'import-design', data: loadedData }
+      }, '*');
+    });
+
+    // Progress updates from plugin
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (msg && msg.type === 'progress') {
+        progressBar.style.width = msg.percent + '%';
+        progressText.textContent = msg.message;
+        if (msg.percent >= 100) {
+          importBtn.textContent = '✅ Done!';
+        }
+      }
+    };
+  </script>
+</body>
+
+</html>
